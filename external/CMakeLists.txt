@@ -25,6 +25,6 @@ target_sources(imgui PRIVATE
   imgui/backends/imgui_impl_sdl3.cpp
   )
 
-target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL2::SDL2)
+target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3)
 
 target_include_directories(stb_image INTERFACE stb_image)
