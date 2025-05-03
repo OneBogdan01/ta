@@ -13,6 +13,9 @@ target_include_directories(stb_image INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/stb_i
 # SDL has its own CMakeLists.txt files
 add_subdirectory(SDL)
 
+# Add Glad for OpenGL loading
+add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/src/glad.c)
+target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
 # ImGui is a static library
 add_library(imgui STATIC
     imgui/imgui.cpp
