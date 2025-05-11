@@ -13,6 +13,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory(code)
 add_subdirectory(external)
 
+# Access to the includes of the libraries
 target_link_libraries(tiny_ape_light_engine
     PUBLIC
         fmt::fmt
