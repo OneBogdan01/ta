@@ -1,11 +1,12 @@
 #pragma once
+#include "platform/device.hpp"
 namespace tale
 {
 
 class Engine
 {
  public:
-  static Engine &Instance();
+  static Engine& Instance();
   /// <summary>
   /// Initializes core modules
   /// </summary>
@@ -19,6 +20,9 @@ class Engine
   /// </summary>
   void Quit();
 
+  Device& GetDevice() const { return *m_device; }
+
  private:
+  Device* m_device {nullptr};
 };
 } // namespace tale

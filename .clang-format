@@ -1,6 +1,5 @@
 # Format Style Options - Created with Clang Power Tools
 ---
-AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowShortBlocksOnASingleLine: Never
@@ -14,14 +13,15 @@ AlwaysBreakAfterReturnType: None
 BasedOnStyle: Google
 BreakBeforeBraces: Allman
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
-SortIncludes: true
+SortIncludes: false
 SpaceAfterTemplateKeyword: false
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCpp11BracedList: true
-SpaceInEmptyBlock: true
+SpaceInEmptyBlock: false
 SpacesBeforeTrailingComments: 1
-SpacesInAngles: true
+SpacesInAngles: false
 SpacesInContainerLiterals: true
-SpacesInConditionalStatement: true
-Standard: c++17
+SpacesInConditionalStatement: false
+SpacesInParentheses: false
+Standard: c++20
 ...

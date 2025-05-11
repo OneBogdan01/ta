@@ -7,24 +7,20 @@ add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/glm)
 set_target_properties(glm PROPERTIES FOLDER "engine/external")
 
+
 add_library(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/stb_image)
 set_target_properties(stb_image PROPERTIES FOLDER "engine/external")
 
 # SDL3
 add_subdirectory(SDL)  
-if (TARGET SDL3::SDL3)
-    set(SDL3_TARGET SDL3::SDL3)
-elseif (TARGET SDL3::SDL3-static)
-    set(SDL3_TARGET SDL3::SDL3-static)
-elseif (TARGET SDL3)
-    set(SDL3_TARGET SDL3)
-elseif (TARGET SDL3-static)
-    set(SDL3_TARGET SDL3-static)
-else()
-    message(FATAL_ERROR "Could not find any SDL3 target.")
-endif()
-
+# Organize all SDL-related targets under "engine/external"
+get_property(SDL_TARGETS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/SDL PROPERTY BUILDSYSTEM_TARGETS)
+foreach(tgt IN LISTS SDL_TARGETS)
+    if (TARGET ${tgt})
+        set_target_properties(${tgt} PROPERTIES FOLDER "engine/external")
+    endif()
+endforeach()
 
 
 # fmt
@@ -48,6 +44,8 @@ add_library(imgui STATIC
     imgui/backends/imgui_impl_opengl3.cpp
     imgui/backends/imgui_impl_sdl3.cpp
 )
+set_target_properties(imgui PROPERTIES FOLDER "engine/external")
+
 target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3 OpenGL::GL)
-set_target_properties(imgui PROPERTIES FOLDER "engine/external")
+
