@@ -8,9 +8,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+
 # Add subdirectories for engine and external dependencies
 add_subdirectory(code)
 add_subdirectory(external)
+
+target_link_libraries(tiny_ape_light_engine
+    PUBLIC
+        fmt::fmt
+        glm
+        stb_image
+        glad
+        imgui
+)
 
 # Enable multi-threaded compilation for MSVC
 if(MSVC)

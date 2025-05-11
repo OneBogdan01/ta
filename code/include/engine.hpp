@@ -1,16 +1,24 @@
 #pragma once
-namespace tale {
+namespace tale
+{
 
-  class Engine{
-  public:
-    Engine();
-    static Engine &Instance();
-    void Init();
-    void Run();
-    void Quit();
-  private:
-    static Engine m_engineInstance;
-    inline static  bool m_instantiated{false};
-  };
-  void WriteLine(const char* text);
-}
+class Engine
+{
+ public:
+  static Engine &Instance();
+  /// <summary>
+  /// Initializes core modules
+  /// </summary>
+  void Init();
+  /// <summary>
+  /// Starts the update loop
+  /// </summary>
+  void Run();
+  /// <summary>
+  /// Cleans up resources and close window
+  /// </summary>
+  void Quit();
+
+ private:
+};
+} // namespace tale
