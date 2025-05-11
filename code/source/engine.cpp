@@ -32,7 +32,8 @@ void Engine::Run()
     while (SDL_PollEvent(&event))
     {
       ImGui_ImplSDL3_ProcessEvent(&event); // Forward your event to backend
-      if (event.type == SDL_EVENT_QUIT)
+      if (event.type == SDL_EVENT_QUIT ||
+          (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE))
       {
         m_device->m_shouldClose = true;
       }
@@ -41,7 +42,6 @@ void Engine::Run()
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
     ImGui::ShowDemoWindow(); // Show demo window! :)
-
 
     m_device->Render();
   }
