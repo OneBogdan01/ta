@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL3/SDL_video.h>
+#include <glm/glm.hpp>
 namespace tale
 {
 enum class GRAPHICS_API
@@ -16,6 +17,7 @@ class Device
 
  private:
   friend class Engine;
+  glm::uvec2 m_windowSize {};
   void InitImGUI();
 
   GRAPHICS_API m_graphicsApi {GRAPHICS_API::OPENGL};

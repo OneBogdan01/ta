@@ -81,6 +81,7 @@ Device::~Device()
 void Device::Render()
 {
   // now you can make GL calls.
+  glViewport(0, 0, m_windowSize.x, m_windowSize.y);
   glClearColor(1, 0, 0, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
