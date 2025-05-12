@@ -19,9 +19,8 @@ Engine& Engine::Instance()
 }
 void Engine::Init()
 {
-  // get the graphics API from config file
-  m_device = new Device(GRAPHICS_API::OPENGL);
-  Info("Engine is initialized");
+  // TODO get the graphics API from config file
+  m_device = new Device(gfx::GRAPHICS_API::OPENGL);
 }
 void Engine::Run()
 {
@@ -38,10 +37,6 @@ void Engine::Run()
         m_device->m_shouldClose = true;
       }
     }
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL3_NewFrame();
-    ImGui::NewFrame();
-    ImGui::ShowDemoWindow(); // Show demo window! :)
 
     m_device->Render();
   }
