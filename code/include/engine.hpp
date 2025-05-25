@@ -18,7 +18,7 @@ class Engine
   /// <summary>
   /// Cleans up resources and close window
   /// </summary>
-  void Quit();
+  void Shutdown();
 
   Device& GetDevice() const { return *m_device; }
 

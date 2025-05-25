@@ -1,18 +1,19 @@
-
-
 #include "platform/opengl/device_gl.hpp"
+
+#include "core/fileio.hpp"
+#include "platform/opengl/opengl.hpp"
+#include "rendering/shader.hpp"
 
 #include <SDL3/SDL_init.h>
 
 #include <SDL3/SDL_video.h>
 
-#include "platform/device.hpp"
 #include "utility/console.hpp"
 
 #include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_sdl3.h>
-#include <glad/glad.h>
+
 using namespace tale;
 
 void OpenGLBackend::Init()
@@ -46,6 +47,17 @@ void OpenGLBackend::Init()
   }
   log::Info("OpenGL Version: {}",
             reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+
+#ifdef DEBUG
+
+  glEnable(GL_DEBUG_OUTPUT);
+  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // Optional: to ensure callback is
+                                         // called immediately
+  glDebugMessageCallback(MessageCallback, nullptr);
+  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr,
+                        GL_TRUE); // Enable all messages
+  log::Info("OpenGL debug output enabled.");
+#endif
 }
 OpenGLBackend::~OpenGLBackend()
 {
@@ -68,6 +80,21 @@ void OpenGLBackend::Render()
   glClearColor(1, 0, 0, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  static Shader triangle({io::GetPath("shaders/colored_triangle.vert"),
+                          io::GetPath("shaders/colored_triangle.frag")});
+  triangle.Activate();
+
+  // No VAO or VBO binding needed if your driver supports it
+  // (On core profile OpenGL 3.3+ you still must bind a VAO, even if empty)
+  GLuint vao;
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+
+  // Draw 3 vertices to form your triangle
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+
+  // Unbind VAO and program if needed
+  glBindVertexArray(0);
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   SDL_GL_SwapWindow(Window);

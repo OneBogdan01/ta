@@ -41,7 +41,7 @@ void Engine::Run()
     m_device->Render();
   }
 }
-void Engine::Quit()
+void Engine::Shutdown()
 {
   delete m_device;
   Info("Engine is closed");
