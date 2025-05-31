@@ -12,6 +12,18 @@ add_library(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/stb_image)
 set_target_properties(stb_image PROPERTIES FOLDER "engine/external")
 
+# vkbootstrap
+add_library(vkbootstrap STATIC)
+
+target_sources(vkbootstrap PRIVATE 
+  vkbootstrap/VkBootstrap.h
+  vkbootstrap/VkBootstrap.cpp
+  )
+
+target_include_directories(vkbootstrap PUBLIC vkbootstrap)
+target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
+set_property(TARGET vkbootstrap PROPERTY CXX_STANDARD 20)
+
 # SDL3
 add_subdirectory(SDL)  
 # Organize all SDL-related targets under "engine/external"
