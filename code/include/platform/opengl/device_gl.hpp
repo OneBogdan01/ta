@@ -14,7 +14,6 @@ struct OpenGLBackend : gfx::IGraphicsBackend
 
   void Init() override;
   void InitImGui() override;
-  void PreRender() override;
 
   SDL_GLContext GlContext {nullptr};
   SDL_Window* Window {nullptr};

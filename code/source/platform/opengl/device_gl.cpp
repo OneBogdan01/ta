@@ -76,6 +76,11 @@ void OpenGLBackend::SetViewportSize(const glm::uvec2& windowSize,
 }
 void OpenGLBackend::Render()
 {
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplSDL3_NewFrame();
+  ImGui::NewFrame();
+  ImGui::ShowDemoWindow(); // Show demo window! :)
+
   // now you can make GL calls.
   glClearColor(1, 0, 0, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -84,8 +89,7 @@ void OpenGLBackend::Render()
                           io::GetPath("shaders/colored_triangle.frag")});
   triangle.Activate();
 
-  // No VAO or VBO binding needed if your driver supports it
-  // (On core profile OpenGL 3.3+ you still must bind a VAO, even if empty)
+  // Memory leak
   GLuint vao;
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
@@ -103,11 +107,4 @@ void OpenGLBackend::InitImGui()
 {
   ImGui_ImplSDL3_InitForOpenGL(Window, GlContext);
   ImGui_ImplOpenGL3_Init();
-}
-void OpenGLBackend::PreRender()
-{
-  ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplSDL3_NewFrame();
-  ImGui::NewFrame();
-  ImGui::ShowDemoWindow(); // Show demo window! :)
 }

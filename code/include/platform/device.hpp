@@ -19,7 +19,6 @@ struct IGraphicsBackend
   virtual void Init() = 0;
   virtual void InitImGui() = 0;
   virtual void Render() = 0;
-  virtual void PreRender() = 0;
 };
 } // namespace gfx
 
@@ -39,5 +38,6 @@ class Device
 
   std::unique_ptr<gfx::IGraphicsBackend> m_graphicsBackend {nullptr};
   bool m_shouldClose {false};
+  bool m_shouldRender {false};
 };
 } // namespace tale

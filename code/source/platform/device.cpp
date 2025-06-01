@@ -54,6 +54,5 @@ Device::Device(gfx::GRAPHICS_API api) : m_graphicsApi(api)
 Device::~Device() {}
 void Device::Render()
 {
-  m_graphicsBackend->PreRender();
   m_graphicsBackend->Render();
 }

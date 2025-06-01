@@ -11,6 +11,8 @@ set_target_properties(tiny_ape_light_engine PROPERTIES FOLDER "engine")
 # Access to the includes of the libraries
 target_link_libraries(tiny_ape_light_engine
     PUBLIC
+        vma
+        vkbootstrap
         fmt::fmt
         glm
         stb_image

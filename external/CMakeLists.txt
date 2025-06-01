@@ -3,10 +3,11 @@ find_package(Vulkan REQUIRED)
 find_package(OpenGL REQUIRED)
 
 # Header-only libraries
+add_library(vma INTERFACE)
+target_include_directories(vma INTERFACE vma)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/glm)
 set_target_properties(glm PROPERTIES FOLDER "engine/external")
-
 
 add_library(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/stb_image)
@@ -60,4 +61,12 @@ set_target_properties(imgui PROPERTIES FOLDER "engine/external")
 
 target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3 OpenGL::GL)
+
+
+# Disable all warnings for targets using VMA
+if(MSVC)
+    target_compile_options(vma INTERFACE /W0)  # MSVC: disable all warnings
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|Intel")
+    target_compile_options(vma INTERFACE -w)   # GCC/Clang/Intel: disable all warnings
+endif()
 
