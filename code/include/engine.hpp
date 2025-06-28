@@ -24,5 +24,6 @@ class Engine
 
  private:
   Device* m_device {nullptr};
+  gfx::GRAPHICS_API m_selectedApi {};
 };
 } // namespace tale

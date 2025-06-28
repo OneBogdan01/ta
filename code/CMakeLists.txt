@@ -20,6 +20,19 @@ target_compile_features(tiny_ape_light_engine PUBLIC cxx_std_20)
 # Engine asset directory
 set(ENGINE_ASSET_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../assets" PARENT_SCOPE)
 
+# Graphics APIs
+option(USE_OPENGL "Use OpenGL as the graphics API" ON)
+option(USE_VULKAN "Use Vulkan as the graphics API" OFF)
+
+
+if(USE_OPENGL)
+    add_compile_definitions(GFX_USE_OPENGL)
+endif()
+if(USE_VULKAN)
+    add_compile_definitions(GFX_USE_VULKAN)
+endif()
+
+
 
 # Proper folder layout in Visual Studio
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/source PREFIX "source" FILES ${ENGINE_SOURCES})

@@ -19,6 +19,7 @@ struct IGraphicsBackend
   virtual void Init() = 0;
   virtual void InitImGui() = 0;
   virtual void Render() = 0;
+  virtual void PreRender() = 0;
 };
 } // namespace gfx
 
@@ -28,6 +29,7 @@ class Device
   Device(gfx::GRAPHICS_API api);
   ~Device();
   void Render();
+  void PreRender();
 
  private:
   friend class Engine;

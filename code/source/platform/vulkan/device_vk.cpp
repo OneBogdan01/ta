@@ -39,10 +39,18 @@ void VulkanBackend::Init()
   _isInitialized = true;
 }
 
+void VulkanBackend::PreRender()
+{
+  // imgui new frame
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplSDL3_NewFrame();
+  ImGui::NewFrame();
+}
 void VulkanBackend::cleanup()
 {
   if (_isInitialized)
   {
+    ImGui::DestroyContext();
     // make sure the gpu has stopped doing its things
     vkDeviceWaitIdle(_device);
 
@@ -132,11 +140,6 @@ void VulkanBackend::draw_geometry(VkCommandBuffer cmd)
 
 void VulkanBackend::Render()
 {
-  // imgui new frame
-  ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplSDL3_NewFrame();
-  ImGui::NewFrame();
-
   // some imgui UI to test
   ImGui::ShowDemoWindow();
   if (ImGui::Begin("background"))

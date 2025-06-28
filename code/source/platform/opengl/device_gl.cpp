@@ -65,6 +65,8 @@ OpenGLBackend::~OpenGLBackend()
 }
 void OpenGLBackend::DestroyBackend()
 {
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplSDL3_Shutdown();
   SDL_GL_DestroyContext(GlContext);
   SDL_DestroyWindow(Window);
   SDL_Quit();
@@ -74,11 +76,14 @@ void OpenGLBackend::SetViewportSize(const glm::uvec2& windowSize,
 {
   glViewport(windowPosition.x, windowPosition.y, windowSize.x, windowSize.y);
 }
-void OpenGLBackend::Render()
+void OpenGLBackend::PreRender()
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
+}
+void OpenGLBackend::Render()
+{
   ImGui::ShowDemoWindow(); // Show demo window! :)
 
   // now you can make GL calls.
@@ -89,9 +94,13 @@ void OpenGLBackend::Render()
                           io::GetPath("shaders/colored_triangle.frag")});
   triangle.Activate();
 
+  static bool once {true};
   // Memory leak
-  GLuint vao;
-  glGenVertexArrays(1, &vao);
+  static GLuint vao;
+  if (once)
+  {
+    glGenVertexArrays(1, &vao);
+  }
   glBindVertexArray(vao);
 
   // Draw 3 vertices to form your triangle
@@ -99,6 +108,7 @@ void OpenGLBackend::Render()
 
   // Unbind VAO and program if needed
   glBindVertexArray(0);
+
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   SDL_GL_SwapWindow(Window);

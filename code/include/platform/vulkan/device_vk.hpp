@@ -54,6 +54,7 @@ constexpr unsigned int FRAME_OVERLAP = 2;
 struct VulkanBackend : tale::gfx::IGraphicsBackend
 {
   void Init() override;
+  void PreRender() override;
 
   void Render() override;
   ~VulkanBackend() override;

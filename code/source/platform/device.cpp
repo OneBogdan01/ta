@@ -31,7 +31,7 @@ Device::Device(gfx::GRAPHICS_API api) : m_graphicsApi(api)
 {
   // const char* appName {"Tiny Ape Light Engine"};
   SDL_InitFlags flags {SDL_INIT_VIDEO};
-  SDL_SetAppMetadata("Tiny Ape Light Engine", "0", "tale");
+  SDL_SetAppMetadata("Tiny Ape Engine", "0", "tae");
   if (SDL_Init(flags) == false)
   {
     log::Error("SDL could not be initialized");
@@ -55,4 +55,8 @@ Device::~Device() {}
 void Device::Render()
 {
   m_graphicsBackend->Render();
+}
+void Device::PreRender()
+{
+  m_graphicsBackend->PreRender();
 }

@@ -10,6 +10,8 @@ struct OpenGLBackend : gfx::IGraphicsBackend
   void DestroyBackend();
   void SetViewportSize(const glm::uvec2& windowSize,
                        const glm::ivec2& windowPosition);
+  void PreRender() override;
+
   void Render() override;
 
   void Init() override;
