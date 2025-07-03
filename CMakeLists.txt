@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Set project version
-project(tiny_ape_light_engine VERSION 1.0.0 LANGUAGES CXX)
+project(Hammered Engine VERSION 1.0.0 LANGUAGES CXX)
 
 
 # Add subdirectories for engine and external dependencies

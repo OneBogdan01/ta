@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "vk_types.hpp"
+#include "types_vk.hpp"
 
 struct DescriptorLayoutBuilder
 {

@@ -1,8 +1,8 @@
-#include "platform/opengl/device_gl.hpp"
+#include "platform/device.hpp"
 
 #include "core/fileio.hpp"
-#include "platform/opengl/opengl.hpp"
-#include "rendering/shader.hpp"
+#include "platform/opengl/opengl_gl.hpp"
+#include "rendering/shader_gl.hpp"
 
 #include <SDL3/SDL_init.h>
 
@@ -14,10 +14,17 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_sdl3.h>
 
-using namespace tale;
+using namespace hm;
 
-void OpenGLBackend::Init()
+namespace hm::internal
 {
+SDL_GLContext GlContext {nullptr};
+SDL_Window* Window {nullptr};
+} // namespace hm::internal
+void Device::Initialize()
+{
+  using namespace hm::internal;
+
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -59,30 +66,27 @@ void OpenGLBackend::Init()
   log::Info("OpenGL debug output enabled.");
 #endif
 }
-OpenGLBackend::~OpenGLBackend()
-{
-  DestroyBackend();
-}
-void OpenGLBackend::DestroyBackend()
+
+void Device::DestroyBackend()
 {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL3_Shutdown();
-  SDL_GL_DestroyContext(GlContext);
-  SDL_DestroyWindow(Window);
+  SDL_GL_DestroyContext(internal::GlContext);
+  SDL_DestroyWindow(internal::Window);
   SDL_Quit();
 }
-void OpenGLBackend::SetViewportSize(const glm::uvec2& windowSize,
-                                    const glm::ivec2& windowPosition)
+void Device::SetViewportSize(const glm::uvec2& windowSize,
+                             const glm::ivec2& windowPosition)
 {
   glViewport(windowPosition.x, windowPosition.y, windowSize.x, windowSize.y);
 }
-void OpenGLBackend::PreRender()
+void Device::PreRender()
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
 }
-void OpenGLBackend::Render()
+void Device::Render()
 {
   ImGui::ShowDemoWindow(); // Show demo window! :)
 
@@ -111,10 +115,10 @@ void OpenGLBackend::Render()
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-  SDL_GL_SwapWindow(Window);
+  SDL_GL_SwapWindow(internal::Window);
 }
-void OpenGLBackend::InitImGui()
+void Device::InitImGui()
 {
-  ImGui_ImplSDL3_InitForOpenGL(Window, GlContext);
+  ImGui_ImplSDL3_InitForOpenGL(internal::Window, internal::GlContext);
   ImGui_ImplOpenGL3_Init();
 }

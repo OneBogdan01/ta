@@ -3,8 +3,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
-#include <platform/vulkan/vk_initializers.hpp>
-#include <platform/vulkan/vk_types.hpp>
+#include <platform/vulkan/initializers_vk.hpp>
+#include <platform/vulkan/types_vk.hpp>
 
 #include <chrono>
 #include <thread>
@@ -14,14 +14,14 @@
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
-#include "platform/vulkan/vk_pipelines.hpp"
+#include "platform/vulkan/pipelines_vk.hpp"
 
 #include "imgui.h"
 #include "backends/imgui_impl_sdl3.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "core/fileio.hpp"
 
-using namespace tale;
+using namespace hm;
 void VulkanBackend::Init()
 {
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);

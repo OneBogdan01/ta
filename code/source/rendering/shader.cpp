@@ -6,21 +6,21 @@
 #include <fstream>
 #include <iostream>
 #include <SDL3/SDL_assert.h>
-std::string tale::ShaderPaths::GetPath() const
+std::string hm::ShaderPaths::GetPath() const
 {
   return Vertex + " " + Fragment;
 }
-tale::Shader::Shader(const ShaderPaths& shader) : m_shaderPaths(shader)
+hm::Shader::Shader(const ShaderPaths& shader) : m_shaderPaths(shader)
 {
   Reload();
   m_resourcePath = m_shaderPaths.GetPath();
 }
-tale::Shader::~Shader()
+hm::Shader::~Shader()
 {
   glDeleteProgram(m_programId);
 }
 
-std::string tale::Shader::LoadShader(const std::string& path)
+std::string hm::Shader::LoadShader(const std::string& path)
 {
   std::ifstream shaderFile {path};
 
@@ -28,7 +28,7 @@ std::string tale::Shader::LoadShader(const std::string& path)
           std::istreambuf_iterator<char>()};
 }
 
-bool tale::Shader::CompileShader(GLuint& shaderId, GLenum shaderType,
+bool hm::Shader::CompileShader(GLuint& shaderId, GLenum shaderType,
                                  const GLchar* source)
 {
   if (source == nullptr)
@@ -61,7 +61,7 @@ bool tale::Shader::CompileShader(GLuint& shaderId, GLenum shaderType,
   }
   return true;
 }
-bool tale::Shader::LinkProgram()
+bool hm::Shader::LinkProgram()
 {
   glLinkProgram(m_programId);
   GLint linked;
@@ -92,7 +92,7 @@ void DeleteShader(GLuint& id)
     id = 0;
   }
 }
-bool tale::Shader::LoadSource(const ShaderPaths& sourcePath)
+bool hm::Shader::LoadSource(const ShaderPaths& sourcePath)
 {
   // compile shaders
   GLuint vertexId {};
@@ -145,7 +145,7 @@ bool tale::Shader::LoadSource(const ShaderPaths& sourcePath)
   DeleteShader(fragmentId);
   return true;
 }
-bool tale::Shader::Load()
+bool hm::Shader::Load()
 {
   static ShaderPaths sourcePaths;
   if (m_shaderPaths.Vertex.empty() == false)
@@ -159,7 +159,7 @@ bool tale::Shader::Load()
 
   return LoadSource(sourcePaths);
 }
-void tale::Shader::Reload()
+void hm::Shader::Reload()
 {
   if (m_programId > 0)
   {
@@ -179,7 +179,7 @@ void tale::Shader::Reload()
     log::Error("Unable to load shader {}", m_resourcePath);
   }
 }
-void tale::Shader::Activate() const
+void hm::Shader::Activate() const
 {
   glUseProgram(m_programId);
 }

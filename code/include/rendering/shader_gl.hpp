@@ -2,8 +2,8 @@
 #include <cstdint>
 #include <string>
 
-#include "platform/opengl/opengl.hpp"
-namespace tale
+#include "platform/opengl/opengl_gl.hpp"
+namespace hm
 {
 
 struct ShaderPaths

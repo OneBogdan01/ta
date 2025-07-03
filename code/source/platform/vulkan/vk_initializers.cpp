@@ -1,4 +1,4 @@
-﻿#include <platform/vulkan/vk_initializers.hpp>
+﻿#include <platform/vulkan/initializers_vk.hpp>
 
 //> init_cmd
 VkCommandPoolCreateInfo vkinit::command_pool_create_info(

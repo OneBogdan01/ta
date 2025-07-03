@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fmt/color.h"
-namespace tale
+namespace hm
 {
 namespace log
 {

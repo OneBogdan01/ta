@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "platform/device.hpp"
 
-#include "platform/vulkan/vk_descriptors.hpp"
+#include "platform/vulkan/descriptors_vk.hpp"
 
 struct DeletionQueue
 {
@@ -51,7 +51,7 @@ struct ComputeEffect
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
-struct VulkanBackend : tale::gfx::IGraphicsBackend
+struct VulkanBackend : hm::gfx::IGraphicsBackend
 {
   void Init() override;
   void PreRender() override;

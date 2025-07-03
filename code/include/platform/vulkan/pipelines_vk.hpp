@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include "platform/vulkan/vk_types.hpp"
-#include "platform/vulkan/vk_pipelines.hpp"
-#include "platform/vulkan/vk_initializers.hpp"
+#include "platform/vulkan/types_vk.hpp"
+#include "platform/vulkan/pipelines_vk.hpp"
+#include "platform/vulkan/initializers_vk.hpp"
 
 #include <fstream>
 

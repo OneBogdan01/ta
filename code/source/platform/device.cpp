@@ -1,5 +1,6 @@
 #include "platform/device.hpp"
 
+#include "core/fileio.hpp"
 #include "platform/opengl/device_gl.hpp"
 #include "platform/vulkan/device_vk.hpp"
 
@@ -10,7 +11,7 @@
 
 #include <imgui.h>
 
-using namespace tale;
+using namespace hm;
 
 void Device::InitImGui()
 {
@@ -27,25 +28,15 @@ void Device::InitImGui()
   // Setup Platform/Renderer backends
   m_graphicsBackend->InitImGui();
 }
-Device::Device(gfx::GRAPHICS_API api) : m_graphicsApi(api)
+Device::Device() : m_graphicsApi(io::LoadGraphicsAPIFromConfig())
 {
   // const char* appName {"Tiny Ape Light Engine"};
   SDL_InitFlags flags {SDL_INIT_VIDEO};
-  SDL_SetAppMetadata("Tiny Ape Engine", "0", "tae");
+  SDL_SetAppMetadata("Hammered Engine", "0", "HammE");
   if (SDL_Init(flags) == false)
   {
     log::Error("SDL could not be initialized");
     return;
-  }
-  switch (api)
-  {
-    case gfx::GRAPHICS_API::OPENGL:
-      m_graphicsBackend = std::make_unique<OpenGLBackend>();
-      break;
-    case gfx::GRAPHICS_API::VULKAN:
-      m_graphicsBackend = std::make_unique<VulkanBackend>();
-
-      break;
   }
 
   m_graphicsBackend->Init();
@@ -56,7 +47,35 @@ void Device::Render()
 {
   m_graphicsBackend->Render();
 }
+void Device::ChangeGraphicsBackend()
+{
+  ImGui::Begin("Graphics Settings");
+
+  static const char* apiOptions[] = {"OpenGL", "Vulkan"};
+  static int selectedApiIndex =
+      (m_graphicsApi == gfx::GRAPHICS_API::OPENGL) ? 0 : 1;
+
+  if (ImGui::Combo("Graphics API", &selectedApiIndex, apiOptions,
+                   IM_ARRAYSIZE(apiOptions)))
+  {
+    gfx::GRAPHICS_API chosen = (selectedApiIndex == 0)
+                                   ? gfx::GRAPHICS_API::OPENGL
+                                   : gfx::GRAPHICS_API::VULKAN;
+
+    if (chosen != m_graphicsApi)
+    {
+      io::SaveGraphicsAPIToConfig(
+          (chosen == gfx::GRAPHICS_API::OPENGL) ? "OPENGL" : "VULKAN");
+
+      // gracefully shut down the engine
+      io::RestartApplication();
+    }
+  }
+
+  ImGui::End();
+}
 void Device::PreRender()
 {
   m_graphicsBackend->PreRender();
+  ChangeGraphicsBackend();
 }

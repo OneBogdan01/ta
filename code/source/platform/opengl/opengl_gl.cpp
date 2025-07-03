@@ -1,8 +1,8 @@
-#include "platform/opengl/opengl.hpp"
+#include "platform/opengl/opengl_gl.hpp"
 
 #include "utility/console.hpp"
 #ifdef DEBUG
-void tale::MessageCallback(GLenum source, GLenum type, GLuint id,
+void hm::MessageCallback(GLenum source, GLenum type, GLuint id,
                            GLenum severity, [[maybe_unused]] GLsizei length,
                            const GLchar* message,
                            [[maybe_unused]] const void* user_param)

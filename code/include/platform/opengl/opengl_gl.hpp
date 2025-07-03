@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
-namespace tale
+namespace hm
 {
 #ifdef DEBUG
 // from
