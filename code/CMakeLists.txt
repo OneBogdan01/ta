@@ -1,12 +1,49 @@
-# Automatically collect all .cpp files in source/
-file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
+# Collect all .cpp files in source/
+file(GLOB_RECURSE ALL_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp
 )
 
-# Automatically collect all .hpp files in include/
-file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
+# Filter out files in source/platform/
+list(FILTER ALL_SOURCES EXCLUDE REGEX ".*/platform/.*")
+
+# Set filtered sources
+set(ENGINE_SOURCES ${ALL_SOURCES})
+
+# Collect all .hpp files in include/
+file(GLOB_RECURSE ALL_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 )
+
+# Filter out files in include/platform/
+list(FILTER ALL_HEADERS EXCLUDE REGEX ".*/platform/.*")
+
+# Set filtered headers
+set(ENGINE_HEADERS ${ALL_HEADERS})
+
+# Now add platform-specific source and headers based on backend choice
+
+if(USE_OPENGL)
+    file(GLOB_RECURSE OPENGL_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/platform/opengl/*.cpp
+    )
+    file(GLOB_RECURSE OPENGL_HEADERS CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/platform/opengl/*.hpp
+    )
+    list(APPEND ENGINE_SOURCES ${OPENGL_SOURCES})
+    list(APPEND ENGINE_HEADERS ${OPENGL_HEADERS})
+endif()
+
+if(USE_VULKAN)
+    file(GLOB_RECURSE VULKAN_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/platform/vulkan/*.cpp
+    )
+    file(GLOB_RECURSE VULKAN_HEADERS CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/platform/vulkan/*.hpp
+    )
+    list(APPEND ENGINE_SOURCES ${VULKAN_SOURCES})
+    list(APPEND ENGINE_HEADERS ${VULKAN_HEADERS})
+endif()
+
 
 add_library(hammered_engine STATIC
     ${ENGINE_SOURCES}

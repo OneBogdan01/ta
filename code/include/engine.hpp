@@ -1,5 +1,5 @@
 #pragma once
-#include "platform/device.hpp"
+#include "core/device.hpp"
 namespace hm
 {
 
@@ -25,4 +25,4 @@ class Engine
  private:
   Device* m_device {nullptr};
 };
-} // namespace tale
+} // namespace hm

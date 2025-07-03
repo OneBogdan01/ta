@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "platform/device.hpp"
+#include "core/device.hpp"
 
 #include "platform/vulkan/descriptors_vk.hpp"
 

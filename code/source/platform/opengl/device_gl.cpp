@@ -1,30 +1,32 @@
-#include "platform/device.hpp"
+#include "core/device.hpp"
+
+#include "platform/opengl/device_gl.hpp"
 
 #include "core/fileio.hpp"
 #include "platform/opengl/opengl_gl.hpp"
-#include "rendering/shader_gl.hpp"
-
-#include <SDL3/SDL_init.h>
-
-#include <SDL3/SDL_video.h>
+#include "platform/opengl/shader_gl.hpp"
 
 #include "utility/console.hpp"
 
-#include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_sdl3.h>
 
-using namespace hm;
-
 namespace hm::internal
 {
-SDL_GLContext GlContext {nullptr};
-SDL_Window* Window {nullptr};
+SDL_GLContext glContext {nullptr};
+SDL_Window* window {nullptr};
 } // namespace hm::internal
+
+using namespace hm;
+using namespace hm::internal;
+
+Device::~Device()
+{
+  DestroyBackend();
+}
+
 void Device::Initialize()
 {
-  using namespace hm::internal;
-
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -32,16 +34,16 @@ void Device::Initialize()
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-  Window =
+  window =
       SDL_CreateWindow("Tale", 800, 600, SDL_INIT_VIDEO | SDL_WINDOW_OPENGL);
-  if (Window == nullptr)
+  if (window == nullptr)
   {
     log::Error("SDL could not create window {}", SDL_GetError());
     return;
   }
 
-  GlContext = SDL_GL_CreateContext(Window);
-  if (GlContext == nullptr)
+  glContext = SDL_GL_CreateContext(window);
+  if (glContext == nullptr)
   {
     log::Error("SDL could not create a OpenGL context {}", SDL_GetError());
     return;
@@ -65,14 +67,15 @@ void Device::Initialize()
                         GL_TRUE); // Enable all messages
   log::Info("OpenGL debug output enabled.");
 #endif
+  InitImGui();
 }
 
 void Device::DestroyBackend()
 {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL3_Shutdown();
-  SDL_GL_DestroyContext(internal::GlContext);
-  SDL_DestroyWindow(internal::Window);
+  SDL_GL_DestroyContext(glContext);
+  SDL_DestroyWindow(window);
   SDL_Quit();
 }
 void Device::SetViewportSize(const glm::uvec2& windowSize,
@@ -85,6 +88,7 @@ void Device::PreRender()
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
+  ChangeGraphicsBackend();
 }
 void Device::Render()
 {
@@ -115,10 +119,21 @@ void Device::Render()
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-  SDL_GL_SwapWindow(internal::Window);
+  SDL_GL_SwapWindow(window);
 }
-void Device::InitImGui()
+
+void Device::InitPlatformImGui()
 {
-  ImGui_ImplSDL3_InitForOpenGL(internal::Window, internal::GlContext);
+  ImGui_ImplSDL3_InitForOpenGL(window, glContext);
   ImGui_ImplOpenGL3_Init();
+}
+
+SDL_GLContextState* device::GetGlContext()
+{
+  return glContext;
+}
+
+SDL_Window* device::GetWindow()
+{
+  return window;
 }

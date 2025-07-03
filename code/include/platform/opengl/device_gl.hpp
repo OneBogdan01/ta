@@ -1,7 +1,11 @@
 ﻿#pragma once
 
-namespace hm::gl
+struct SDL_GLContextState;
+struct SDL_Window;
+
+namespace hm::device
 {
+SDL_GLContextState* GetGlContext();
+SDL_Window* GetWindow();
 
-
-} // namespace hm::gl
+} // namespace hm::device

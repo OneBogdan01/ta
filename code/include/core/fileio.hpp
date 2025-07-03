@@ -1,5 +1,5 @@
 #pragma once
-#include "platform/device.hpp"
+#include "core/device.hpp"
 #include "utility/console.hpp"
 
 #include <filesystem>
@@ -16,4 +16,4 @@ gfx::GRAPHICS_API LoadGraphicsAPIFromConfig();
 
 constexpr std::string_view AssetPath {"assets/"};
 } // namespace io
-} // namespace tale
+} // namespace hm

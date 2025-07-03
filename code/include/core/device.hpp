@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <glm/glm.hpp>
 namespace hm
 {
@@ -22,10 +21,11 @@ class Device
   Device();
   ~Device();
   void Render();
-  void ChangeGraphicsBackend();
+  void ChangeGraphicsBackend() const;
   void PreRender();
   void Initialize();
   void DestroyBackend();
+  void SetGraphicsAPI(gfx::GRAPHICS_API api);
 
   void SetViewportSize(const glm::uvec2& windowSize,
                        const glm::ivec2& windowPosition);
@@ -33,11 +33,15 @@ class Device
  private:
   friend class Engine;
   glm::uvec2 m_windowSize {};
+  // Should be called before any other ImGui set-up calls
   void InitImGui();
+  // API specific initialization of ImGui
+  void InitPlatformImGui();
 
   bool m_shouldClose {false};
   bool m_shouldRender {false};
 
   gfx::GRAPHICS_API m_graphicsApi {gfx::GRAPHICS_API::OPENGL};
 };
+
 } // namespace hm

@@ -1,4 +1,4 @@
-#include "rendering/shader.hpp"
+#include "platform/opengl/shader_gl.hpp"
 
 #include "utility/console.hpp"
 
@@ -29,7 +29,7 @@ std::string hm::Shader::LoadShader(const std::string& path)
 }
 
 bool hm::Shader::CompileShader(GLuint& shaderId, GLenum shaderType,
-                                 const GLchar* source)
+                               const GLchar* source)
 {
   if (source == nullptr)
   {

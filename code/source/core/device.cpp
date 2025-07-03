@@ -1,18 +1,14 @@
-#include "platform/device.hpp"
+#include "core/device.hpp"
 
 #include "core/fileio.hpp"
-#include "platform/opengl/device_gl.hpp"
-#include "platform/vulkan/device_vk.hpp"
 
 #include <SDL3/SDL_init.h>
 
-#include <SDL3/SDL_video.h>
 #include "utility/console.hpp"
 
 #include <imgui.h>
 
 using namespace hm;
-
 void Device::InitImGui()
 {
   // Setup Dear ImGui context
@@ -24,13 +20,17 @@ void Device::InitImGui()
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableGamepad;            // Enable Gamepad Controls
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // IF using Docking Branch
-
-  // Setup Platform/Renderer backends
-  m_graphicsBackend->InitImGui();
+  InitPlatformImGui();
 }
-Device::Device() : m_graphicsApi(io::LoadGraphicsAPIFromConfig())
+void Device::SetGraphicsAPI(gfx::GRAPHICS_API api)
 {
-  // const char* appName {"Tiny Ape Light Engine"};
+  m_graphicsApi = api;
+}
+
+Device::Device()
+{
+  SetGraphicsAPI(io::LoadGraphicsAPIFromConfig());
+
   SDL_InitFlags flags {SDL_INIT_VIDEO};
   SDL_SetAppMetadata("Hammered Engine", "0", "HammE");
   if (SDL_Init(flags) == false)
@@ -39,15 +39,10 @@ Device::Device() : m_graphicsApi(io::LoadGraphicsAPIFromConfig())
     return;
   }
 
-  m_graphicsBackend->Init();
-  InitImGui();
+  Initialize();
 }
-Device::~Device() {}
-void Device::Render()
-{
 
-}
-void Device::ChangeGraphicsBackend()
+void Device::ChangeGraphicsBackend() const
 {
   ImGui::Begin("Graphics Settings");
 
@@ -73,9 +68,4 @@ void Device::ChangeGraphicsBackend()
   }
 
   ImGui::End();
-}
-void Device::PreRender()
-{
-  m_graphicsBackend->PreRender();
-  ChangeGraphicsBackend();
 }
