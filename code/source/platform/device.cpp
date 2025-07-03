@@ -45,7 +45,7 @@ Device::Device() : m_graphicsApi(io::LoadGraphicsAPIFromConfig())
 Device::~Device() {}
 void Device::Render()
 {
-  m_graphicsBackend->Render();
+
 }
 void Device::ChangeGraphicsBackend()
 {

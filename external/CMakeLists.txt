@@ -38,7 +38,7 @@ endforeach()
 
 # fmt
 add_subdirectory(fmt EXCLUDE_FROM_ALL)
-target_link_libraries(tiny_ape_light_engine PRIVATE fmt::fmt)
+target_link_libraries(hammered_engine PRIVATE fmt::fmt)
 set_target_properties(fmt PROPERTIES FOLDER "engine/external")
 
 # glad

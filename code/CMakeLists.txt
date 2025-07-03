@@ -8,14 +8,14 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 )
 
-add_library(tiny_ape_light_engine STATIC
+add_library(hammered_engine STATIC
     ${ENGINE_SOURCES}
     ${ENGINE_HEADERS}
 )
-target_include_directories(tiny_ape_light_engine PUBLIC
+target_include_directories(hammered_engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include   
 )
-target_compile_features(tiny_ape_light_engine PUBLIC cxx_std_20)
+target_compile_features(hammered_engine PUBLIC cxx_std_20)
 
 # Engine asset directory
 set(ENGINE_ASSET_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../assets" PARENT_SCOPE)
