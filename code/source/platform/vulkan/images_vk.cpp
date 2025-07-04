@@ -1,4 +1,4 @@
-#include "platform/vulkan/vk_images.hpp"
+#include "platform/vulkan/images_vk.hpp"
 #include "platform/vulkan/initializers_vk.hpp"
 
 void vkutil::transition_image(VkCommandBuffer cmd, VkImage image,

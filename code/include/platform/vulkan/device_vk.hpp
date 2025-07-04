@@ -3,6 +3,9 @@
 
 #include "platform/vulkan/descriptors_vk.hpp"
 
+namespace hm::internal
+{
+
 struct DeletionQueue
 {
   std::deque<std::function<void()>> deletors;
@@ -49,93 +52,5 @@ struct ComputeEffect
   ComputePushConstants data;
 };
 
-constexpr unsigned int FRAME_OVERLAP = 2;
-
-struct VulkanBackend : hm::gfx::IGraphicsBackend
-{
-  void Init() override;
-  void PreRender() override;
-
-  void Render() override;
-  ~VulkanBackend() override;
-
- public:
-  // shuts down the engine
-  void cleanup();
-  void draw_background(VkCommandBuffer cmd);
-
-  void draw_geometry(VkCommandBuffer cmd);
-
-  void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
-
-  FrameData _frames[FRAME_OVERLAP];
-
-  FrameData& get_current_frame();
-
-  VkQueue _graphicsQueue;
-  uint32_t _graphicsQueueFamily;
-
-  VkInstance _instance;                      // Vulkan library handle
-  VkDebugUtilsMessengerEXT _debug_messenger; // Vulkan debug output handle
-  VkPhysicalDevice _chosenGPU;               // GPU chosen as the default device
-  VkDevice _device;                          // Vulkan device for commands
-  VkSurfaceKHR _surface;                     // Vulkan window surface
-  VkExtent2D _windowExtent {1028, 512};
-
-  bool _isInitialized {false};
-  int _frameNumber {0};
-  bool stop_rendering {false};
-
-  struct SDL_Window* _window {nullptr};
-  bool bUseValidationLayers = true;
-
-  // swapchain
-  VkSwapchainKHR _swapchain;
-  VkFormat _swapchainImageFormat;
-
-  std::vector<VkImage> _swapchainImages;
-  std::vector<VkImageView> _swapchainImageViews;
-  VkExtent2D _swapchainExtent;
-
-  DescriptorAllocator globalDescriptorAllocator;
-
-  VkDescriptorSet _drawImageDescriptors;
-  VkDescriptorSetLayout _drawImageDescriptorLayout;
-
-  VkPipeline _gradientPipeline;
-  VkPipelineLayout _gradientPipelineLayout;
-  // immediate submit structures
-  VkFence _immFence;
-  VkCommandBuffer _immCommandBuffer;
-  VkCommandPool _immCommandPool;
-
-  void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
-
- private:
-  void InitImGui() override;
-
-  VkPipelineLayout _trianglePipelineLayout;
-  VkPipeline _trianglePipeline;
-
-  VmaAllocator _allocator;
-  DeletionQueue _mainDeletionQueue;
-
-  AllocatedImage _drawImage;
-  VkExtent2D _drawExtent;
-
-  void init_triangle_pipeline();
-  void init_pipelines();
-  void init_background_pipelines();
-  void init_descriptors();
-  void init_vulkan();
-  void init_swapchain();
-  void init_commands();
-  void init_sync_structures();
-  void create_swapchain(uint32_t width, uint32_t height);
-  void destroy_swapchain();
-
- private:
-  std::vector<ComputeEffect> backgroundEffects;
-  int currentBackgroundEffect {0};
-};
-inline VulkanBackend::~VulkanBackend() {}
+constexpr uint32_t FRAME_OVERLAP = 2;
+} // namespace hm::internal

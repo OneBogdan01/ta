@@ -1,4 +1,5 @@
-﻿#include "platform/vulkan/device_vk.hpp"
+﻿#include "core/device.hpp"
+#include "platform/vulkan/device_vk.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -10,7 +11,7 @@
 #include <thread>
 
 #include "VkBootstrap.h"
-#include "platform/vulkan/vk_images.hpp"
+#include "platform/vulkan/images_vk.hpp"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
@@ -21,8 +22,83 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "core/fileio.hpp"
 
+namespace hm::internal
+{
+
+void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
+
+FrameData _frames[FRAME_OVERLAP];
+
+FrameData& get_current_frame();
+
+VkQueue _graphicsQueue;
+uint32_t _graphicsQueueFamily;
+
+VkInstance _instance;                      // Vulkan library handle
+VkDebugUtilsMessengerEXT _debug_messenger; // Vulkan debug output handle
+VkPhysicalDevice _chosenGPU;               // GPU chosen as the default device
+VkDevice _device;                          // Vulkan device for commands
+VkSurfaceKHR _surface;                     // Vulkan window surface
+VkExtent2D _windowExtent {1028, 512};
+
+bool _isInitialized {false};
+int _frameNumber {0};
+bool stop_rendering {false};
+
+struct SDL_Window* _window {nullptr};
+bool bUseValidationLayers = true;
+
+// swapchain
+VkSwapchainKHR _swapchain;
+VkFormat _swapchainImageFormat;
+
+std::vector<VkImage> _swapchainImages;
+std::vector<VkImageView> _swapchainImageViews;
+VkExtent2D _swapchainExtent;
+
+DescriptorAllocator globalDescriptorAllocator;
+
+VkDescriptorSet _drawImageDescriptors;
+VkDescriptorSetLayout _drawImageDescriptorLayout;
+
+VkPipeline _gradientPipeline;
+VkPipelineLayout _gradientPipelineLayout;
+// immediate submit structures
+VkFence _immFence;
+VkCommandBuffer _immCommandBuffer;
+VkCommandPool _immCommandPool;
+
+void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+VkPipelineLayout _trianglePipelineLayout;
+VkPipeline _trianglePipeline;
+
+VmaAllocator _allocator;
+DeletionQueue _mainDeletionQueue;
+
+AllocatedImage _drawImage;
+VkExtent2D _drawExtent;
+
+void init_triangle_pipeline();
+void init_pipelines();
+void init_background_pipelines();
+void init_descriptors();
+void init_vulkan();
+void init_swapchain();
+void init_commands();
+void init_sync_structures();
+void create_swapchain(uint32_t width, uint32_t height);
+void destroy_swapchain();
+// shuts down the engine
+void cleanup();
+void draw_background(VkCommandBuffer cmd);
+
+void draw_geometry(VkCommandBuffer cmd);
+std::vector<ComputeEffect> backgroundEffects;
+int currentBackgroundEffect {0};
+} // namespace hm::internal
 using namespace hm;
-void VulkanBackend::Init()
+using namespace hm::internal;
+void Device::Initialize()
 {
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
 
@@ -35,110 +111,28 @@ void VulkanBackend::Init()
   init_descriptors();
   init_pipelines();
 
+  InitImGui();
+
   // everything went fine
   _isInitialized = true;
 }
 
-void VulkanBackend::PreRender()
+void Device::DestroyBackend()
+{
+  cleanup();
+}
+
+void Device::PreRender()
 {
   // imgui new frame
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
+  ChangeGraphicsBackend();
 }
-void VulkanBackend::cleanup()
-{
-  if (_isInitialized)
-  {
-    ImGui::DestroyContext();
-    // make sure the gpu has stopped doing its things
-    vkDeviceWaitIdle(_device);
+Device::~Device() {}
 
-    // free per-frame structures and deletion queue
-    for (int i = 0; i < FRAME_OVERLAP; i++)
-    {
-      vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
-
-      // destroy sync objects
-      vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
-      vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
-      vkDestroySemaphore(_device, _frames[i]._swapchainSemaphore, nullptr);
-
-      _frames[i]._deletionQueue.flush();
-    }
-
-    // flush the global deletion queue
-    _mainDeletionQueue.flush();
-
-    SDL_DestroyWindow(_window);
-    destroy_swapchain();
-
-    vkDestroySurfaceKHR(_instance, _surface, nullptr);
-    vkDestroyDevice(_device, nullptr);
-
-    vkb::destroy_debug_utils_messenger(_instance, _debug_messenger);
-    vkDestroyInstance(_instance, nullptr);
-    SDL_DestroyWindow(_window);
-  }
-}
-
-void VulkanBackend::draw_background(VkCommandBuffer cmd)
-{
-  ComputeEffect& effect = backgroundEffects[currentBackgroundEffect];
-
-  // bind the background compute pipeline
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, effect.pipeline);
-
-  // bind the descriptor set containing the draw image for the compute pipeline
-  vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          _gradientPipelineLayout, 0, 1, &_drawImageDescriptors,
-                          0, nullptr);
-
-  vkCmdPushConstants(cmd, _gradientPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
-                     0, sizeof(ComputePushConstants), &effect.data);
-  // execute the compute pipeline dispatch. We are using 16x16 workgroup size so
-  // we need to divide by it
-  vkCmdDispatch(cmd, std::ceil(_drawExtent.width / 16.0),
-                std::ceil(_drawExtent.height / 16.0), 1);
-}
-void VulkanBackend::draw_geometry(VkCommandBuffer cmd)
-{
-  // begin a render pass  connected to our draw image
-  VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(
-      _drawImage.imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-  VkRenderingInfo renderInfo =
-      vkinit::rendering_info(_drawExtent, &colorAttachment, nullptr);
-  vkCmdBeginRendering(cmd, &renderInfo);
-
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
-
-  // set dynamic viewport and scissor
-  VkViewport viewport = {};
-  viewport.x = 0;
-  viewport.y = 0;
-  viewport.width = _drawExtent.width;
-  viewport.height = _drawExtent.height;
-  viewport.minDepth = 0.f;
-  viewport.maxDepth = 1.f;
-
-  vkCmdSetViewport(cmd, 0, 1, &viewport);
-
-  VkRect2D scissor = {};
-  scissor.offset.x = 0;
-  scissor.offset.y = 0;
-  scissor.extent.width = _drawExtent.width;
-  scissor.extent.height = _drawExtent.height;
-
-  vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-  // launch a draw command to draw 3 vertices
-  vkCmdDraw(cmd, 3, 1, 0, 0);
-
-  vkCmdEndRendering(cmd);
-}
-
-void VulkanBackend::Render()
+void Device::Render()
 {
   // some imgui UI to test
   ImGui::ShowDemoWindow();
@@ -273,7 +267,164 @@ void VulkanBackend::Render()
   // increase the number of frames drawn
   _frameNumber++;
 }
-void VulkanBackend::init_triangle_pipeline()
+void Device::InitPlatformImGui()
+{
+  // 1: create descriptor pool for IMGUI
+  //  the size of the pool is very oversize, but it's copied from imgui demo
+  //  itself.
+  VkDescriptorPoolSize pool_sizes[] = {
+      {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+      {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+      {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+      {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+      {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+      {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+
+  VkDescriptorPoolCreateInfo pool_info = {};
+  pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+  pool_info.maxSets = 1000;
+  pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
+  pool_info.pPoolSizes = pool_sizes;
+
+  VkDescriptorPool imguiPool;
+  VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr, &imguiPool));
+
+  // 2: initialize imgui library
+
+  // this initializes imgui for SDL
+  ImGui_ImplSDL3_InitForVulkan(_window);
+
+  // this initializes imgui for Vulkan
+  ImGui_ImplVulkan_InitInfo init_info = {};
+  init_info.Instance = _instance;
+  init_info.PhysicalDevice = _chosenGPU;
+  init_info.Device = _device;
+  init_info.Queue = _graphicsQueue;
+  init_info.DescriptorPool = imguiPool;
+  init_info.MinImageCount = 3;
+  init_info.ImageCount = 3;
+  init_info.UseDynamicRendering = true;
+
+  // dynamic rendering parameters for imgui to use
+  init_info.PipelineRenderingCreateInfo = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
+  init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+  init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats =
+      &_swapchainImageFormat;
+
+  init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+  ImGui_ImplVulkan_Init(&init_info);
+
+  ImGui_ImplVulkan_CreateFontsTexture();
+
+  // add the destroy the imgui created structures
+  _mainDeletionQueue.push_function(
+      [=]()
+      {
+        ImGui_ImplVulkan_Shutdown();
+        vkDestroyDescriptorPool(_device, imguiPool, nullptr);
+      });
+}
+void internal::cleanup()
+{
+  if (_isInitialized)
+  {
+    ImGui::DestroyContext();
+    // make sure the gpu has stopped doing its things
+    vkDeviceWaitIdle(_device);
+
+    // free per-frame structures and deletion queue
+    for (int i = 0; i < FRAME_OVERLAP; i++)
+    {
+      vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
+
+      // destroy sync objects
+      vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
+      vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
+      vkDestroySemaphore(_device, _frames[i]._swapchainSemaphore, nullptr);
+
+      _frames[i]._deletionQueue.flush();
+    }
+
+    // flush the global deletion queue
+    _mainDeletionQueue.flush();
+
+    SDL_DestroyWindow(_window);
+    destroy_swapchain();
+
+    vkDestroySurfaceKHR(_instance, _surface, nullptr);
+    vkDestroyDevice(_device, nullptr);
+
+    vkb::destroy_debug_utils_messenger(_instance, _debug_messenger);
+    vkDestroyInstance(_instance, nullptr);
+    SDL_DestroyWindow(_window);
+  }
+}
+
+void internal::draw_background(VkCommandBuffer cmd)
+{
+  ComputeEffect& effect = backgroundEffects[currentBackgroundEffect];
+
+  // bind the background compute pipeline
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, effect.pipeline);
+
+  // bind the descriptor set containing the draw image for the compute pipeline
+  vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          _gradientPipelineLayout, 0, 1, &_drawImageDescriptors,
+                          0, nullptr);
+
+  vkCmdPushConstants(cmd, _gradientPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
+                     0, sizeof(ComputePushConstants), &effect.data);
+  // execute the compute pipeline dispatch. We are using 16x16 workgroup size so
+  // we need to divide by it
+  vkCmdDispatch(cmd, std::ceil(_drawExtent.width / 16.0),
+                std::ceil(_drawExtent.height / 16.0), 1);
+}
+void internal::draw_geometry(VkCommandBuffer cmd)
+{
+  // begin a render pass  connected to our draw image
+  VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(
+      _drawImage.imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  VkRenderingInfo renderInfo =
+      vkinit::rendering_info(_drawExtent, &colorAttachment, nullptr);
+  vkCmdBeginRendering(cmd, &renderInfo);
+
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
+
+  // set dynamic viewport and scissor
+  VkViewport viewport = {};
+  viewport.x = 0;
+  viewport.y = 0;
+  viewport.width = _drawExtent.width;
+  viewport.height = _drawExtent.height;
+  viewport.minDepth = 0.f;
+  viewport.maxDepth = 1.f;
+
+  vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+  VkRect2D scissor = {};
+  scissor.offset.x = 0;
+  scissor.offset.y = 0;
+  scissor.extent.width = _drawExtent.width;
+  scissor.extent.height = _drawExtent.height;
+
+  vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+  // launch a draw command to draw 3 vertices
+  vkCmdDraw(cmd, 3, 1, 0, 0);
+
+  vkCmdEndRendering(cmd);
+}
+
+void internal::init_triangle_pipeline()
 {
   VkShaderModule triangleFragShader;
   if (!vkutil::load_shader_module(
@@ -343,12 +494,12 @@ void VulkanBackend::init_triangle_pipeline()
         vkDestroyPipeline(_device, _trianglePipeline, nullptr);
       });
 }
-void VulkanBackend::init_pipelines()
+void internal::init_pipelines()
 {
   init_background_pipelines();
   init_triangle_pipeline();
 }
-void VulkanBackend::init_background_pipelines()
+void internal::init_background_pipelines()
 {
   VkPipelineLayoutCreateInfo computeLayout {};
   computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -439,7 +590,7 @@ void VulkanBackend::init_background_pipelines()
       });
 }
 
-void VulkanBackend::init_descriptors()
+void internal::init_descriptors()
 {
   // create a descriptor pool that will hold 10 sets with 1 image each
   std::vector<DescriptorAllocator::PoolSizeRatio> sizes = {
@@ -487,7 +638,7 @@ void VulkanBackend::init_descriptors()
   }
 }
 
-void VulkanBackend::init_vulkan()
+void internal::init_vulkan()
 {
   // set the validation layers to false if not in debug
 #ifdef DEBUG
@@ -563,7 +714,7 @@ void VulkanBackend::init_vulkan()
         vmaDestroyAllocator(_allocator);
       });
 }
-void VulkanBackend::init_commands()
+void internal::init_commands()
 {
   // create a command pool for commands submitted to the graphics queue.
   // we also want the pool to allow for resetting of individual command buffers
@@ -600,7 +751,7 @@ void VulkanBackend::init_commands()
         vkDestroyCommandPool(_device, _immCommandPool, nullptr);
       });
 }
-void VulkanBackend::immediate_submit(
+void internal::immediate_submit(
     std::function<void(VkCommandBuffer cmd)>&& function)
 {
   VK_CHECK(vkResetFences(_device, 1, &_immFence));
@@ -626,73 +777,8 @@ void VulkanBackend::immediate_submit(
 
   VK_CHECK(vkWaitForFences(_device, 1, &_immFence, true, 9999999999));
 }
-void VulkanBackend::InitImGui()
-{
-  // 1: create descriptor pool for IMGUI
-  //  the size of the pool is very oversize, but it's copied from imgui demo
-  //  itself.
-  VkDescriptorPoolSize pool_sizes[] = {
-      {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
-      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-      {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
-      {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
-      {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
-      {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
-      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
-      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
-      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-      {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
 
-  VkDescriptorPoolCreateInfo pool_info = {};
-  pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-  pool_info.maxSets = 1000;
-  pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
-  pool_info.pPoolSizes = pool_sizes;
-
-  VkDescriptorPool imguiPool;
-  VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr, &imguiPool));
-
-  // 2: initialize imgui library
-
-  // this initializes imgui for SDL
-  ImGui_ImplSDL3_InitForVulkan(_window);
-
-  // this initializes imgui for Vulkan
-  ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance = _instance;
-  init_info.PhysicalDevice = _chosenGPU;
-  init_info.Device = _device;
-  init_info.Queue = _graphicsQueue;
-  init_info.DescriptorPool = imguiPool;
-  init_info.MinImageCount = 3;
-  init_info.ImageCount = 3;
-  init_info.UseDynamicRendering = true;
-
-  // dynamic rendering parameters for imgui to use
-  init_info.PipelineRenderingCreateInfo = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
-  init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-  init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats =
-      &_swapchainImageFormat;
-
-  init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
-  ImGui_ImplVulkan_Init(&init_info);
-
-  ImGui_ImplVulkan_CreateFontsTexture();
-
-  // add the destroy the imgui created structures
-  _mainDeletionQueue.push_function(
-      [=]()
-      {
-        ImGui_ImplVulkan_Shutdown();
-        vkDestroyDescriptorPool(_device, imguiPool, nullptr);
-      });
-}
-
-void VulkanBackend::init_sync_structures()
+void internal::init_sync_structures()
 {
   // create syncronization structures
   // one fence to control when the gpu has finished rendering the frame,
@@ -722,7 +808,7 @@ void VulkanBackend::init_sync_structures()
         vkDestroyFence(_device, _immFence, nullptr);
       });
 }
-void VulkanBackend::create_swapchain(uint32_t width, uint32_t height)
+void internal::create_swapchain(uint32_t width, uint32_t height)
 {
   vkb::SwapchainBuilder swapchainBuilder {_chosenGPU, _device, _surface};
 
@@ -747,7 +833,7 @@ void VulkanBackend::create_swapchain(uint32_t width, uint32_t height)
   _swapchainImages = vkbSwapchain.get_images().value();
   _swapchainImageViews = vkbSwapchain.get_image_views().value();
 }
-void VulkanBackend::destroy_swapchain()
+void internal::destroy_swapchain()
 {
   vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 
@@ -758,7 +844,7 @@ void VulkanBackend::destroy_swapchain()
   }
 }
 
-void VulkanBackend::init_swapchain()
+void internal::init_swapchain()
 {
   create_swapchain(_windowExtent.width, _windowExtent.height);
 
@@ -804,7 +890,7 @@ void VulkanBackend::init_swapchain()
       });
 }
 
-void VulkanBackend::draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView)
+void internal::draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView)
 {
   VkRenderingAttachmentInfo colorAttachment = vkinit::attachment_info(
       targetImageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -818,7 +904,7 @@ void VulkanBackend::draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView)
   vkCmdEndRendering(cmd);
 }
 
-FrameData& VulkanBackend::get_current_frame()
+FrameData& internal::get_current_frame()
 {
   return _frames[_frameNumber % FRAME_OVERLAP];
 }

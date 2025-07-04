@@ -38,7 +38,6 @@ endforeach()
 
 # fmt
 add_subdirectory(fmt EXCLUDE_FROM_ALL)
-target_link_libraries(hammered_engine PRIVATE fmt::fmt)
 set_target_properties(fmt PROPERTIES FOLDER "engine/external")
 
 # glad
@@ -46,22 +45,36 @@ add_library(glad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/src/glad.c)
 target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glad/include)
 set_target_properties(glad PROPERTIES FOLDER "engine/external")
 
+
 # imgui
-add_library(imgui STATIC
+
+set(IMGUI_CORE
     imgui/imgui.cpp
     imgui/imgui_demo.cpp
     imgui/imgui_draw.cpp
     imgui/imgui_widgets.cpp
     imgui/imgui_tables.cpp
-    imgui/backends/imgui_impl_vulkan.cpp
-    imgui/backends/imgui_impl_opengl3.cpp
     imgui/backends/imgui_impl_sdl3.cpp
 )
-set_target_properties(imgui PROPERTIES FOLDER "engine/external")
 
-target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
-target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3 OpenGL::GL)
+add_library(imgui_core STATIC ${IMGUI_CORE})
+target_include_directories(imgui_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+target_link_libraries(imgui_core PUBLIC SDL3::SDL3)
+set_target_properties(imgui_core PROPERTIES FOLDER "engine/external")
 
+# Vulkan variant
+add_library(imgui_vulkan STATIC
+    imgui/backends/imgui_impl_vulkan.cpp
+)
+target_link_libraries(imgui_vulkan PUBLIC imgui_core Vulkan::Vulkan)
+set_target_properties(imgui_vulkan PROPERTIES FOLDER "engine/external")
+
+# OpenGL variant
+add_library(imgui_opengl STATIC
+    imgui/backends/imgui_impl_opengl3.cpp
+)
+target_link_libraries(imgui_opengl PUBLIC imgui_core OpenGL::GL)
+set_target_properties(imgui_opengl PROPERTIES FOLDER "engine/external")
 
 # Disable all warnings for targets using VMA
 if(MSVC)

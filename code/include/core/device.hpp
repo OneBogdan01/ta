@@ -24,7 +24,7 @@ class Device
   void ChangeGraphicsBackend() const;
   void PreRender();
   void Initialize();
-  void DestroyBackend();
+  static void DestroyBackend();
   void SetGraphicsAPI(gfx::GRAPHICS_API api);
 
   void SetViewportSize(const glm::uvec2& windowSize,
