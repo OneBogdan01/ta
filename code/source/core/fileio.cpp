@@ -29,29 +29,30 @@ void RestartApplication()
     return;
   }
 
-  // Set your executable name here manually:
-#ifdef _WIN32
-  const char* exe_name = "game.exe"; // Change this to your actual exe name
-#elif defined(__APPLE__)
-  const char* exe_name = "game"; // macOS executable name
-#else
-  const char* exe_name = "game"; // Linux executable name
-#endif
+  auto selectedAPI = LoadGraphicsAPIFromConfig();
 
-  // Construct full path to executable
-  std::string exe_path = std::string(base_path) + exe_name;
+  const char* exeName = nullptr;
+
+  switch (selectedAPI)
+  {
+    case gfx::GRAPHICS_API::VULKAN:
+      exeName = GAME_VK_EXECUTABLE_NAME;
+      break;
+    case gfx::GRAPHICS_API::OPENGL:
+      exeName = GAME_GL_EXECUTABLE_NAME;
+      break;
+  }
+
+  std::string exe_path = std::string(base_path) + exeName;
 
   char cmd[4096];
 
 #ifdef _WIN32
-  // On Windows, use start with delay (timeout) and quotes properly escaped
   snprintf(cmd, sizeof(cmd), "cmd /C \"timeout 1 && start \"\" \"%s\"\"",
            exe_path.c_str());
 #elif defined(__APPLE__)
-  // macOS uses open, with sleep delay
   snprintf(cmd, sizeof(cmd), "sleep 1 && open \"%s\"", exe_path.c_str());
 #else
-  // Linux/Unix with sleep and direct execution
   snprintf(cmd, sizeof(cmd), "sleep 1 && \"%s\" &", exe_path.c_str());
 #endif
 
@@ -61,6 +62,15 @@ void RestartApplication()
 
   SDL_Quit();
   exit(0);
+}
+gfx::GRAPHICS_API LoadCurrentGraphicsAPI()
+{
+#ifdef GFX_USE_VULKAN
+
+  return gfx::GRAPHICS_API::VULKAN;
+#elif GFX_USE_OPENGL
+  return gfx::GRAPHICS_API::OPENGL;
+#endif
 }
 gfx::GRAPHICS_API LoadGraphicsAPIFromConfig()
 {
@@ -92,4 +102,4 @@ gfx::GRAPHICS_API LoadGraphicsAPIFromConfig()
 
   return result;
 }
-} // namespace tale::io
+} // namespace hm::io

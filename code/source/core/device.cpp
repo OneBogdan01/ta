@@ -29,7 +29,7 @@ void Device::SetGraphicsAPI(gfx::GRAPHICS_API api)
 
 Device::Device()
 {
-  SetGraphicsAPI(io::LoadGraphicsAPIFromConfig());
+  SetGraphicsAPI(io::LoadCurrentGraphicsAPI());
 
   SDL_InitFlags flags {SDL_INIT_VIDEO};
   SDL_SetAppMetadata("Hammered Engine", "0", "HammE");
