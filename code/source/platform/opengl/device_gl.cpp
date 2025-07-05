@@ -10,7 +10,7 @@
 
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_sdl3.h>
-
+#include <glm/gtc/type_ptr.hpp>
 namespace hm::internal
 {
 SDL_GLContext glContext {nullptr};
@@ -34,8 +34,8 @@ void Device::Initialize()
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-  window =
-      SDL_CreateWindow("Tale", 800, 600, SDL_INIT_VIDEO | SDL_WINDOW_OPENGL);
+  window = SDL_CreateWindow(WindowTitle, m_windowSize.x, m_windowSize.y,
+                            SDL_INIT_VIDEO | SDL_WINDOW_OPENGL);
   if (window == nullptr)
   {
     log::Error("SDL could not create window {}", SDL_GetError());
@@ -63,9 +63,12 @@ void Device::Initialize()
   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // Optional: to ensure callback is
                                          // called immediately
   glDebugMessageCallback(MessageCallback, nullptr);
-  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr,
-                        GL_TRUE); // Enable all messages
+  // Enable everything except notifications
+  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE,
+                        GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
+
   log::Info("OpenGL debug output enabled.");
+
 #endif
   InitImGui();
 }
@@ -104,18 +107,25 @@ void Device::Render()
 
   static bool once {true};
   // Memory leak
-  static GLuint vao;
+  static GLuint vao {};
+  static glm::mat4 camMatrix {glm::mat4(1.0f)};
+
   if (once)
   {
+    camMatrix = glm::scale(camMatrix, {1.0f, -1.f, 1.0f});
+
     glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    // upload matrix
+    once = false;
   }
-  glBindVertexArray(vao);
+  static GLint loc = glGetUniformLocation(triangle.m_programId, "uViewProj");
+
+  glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(camMatrix));
 
   // Draw 3 vertices to form your triangle
   glDrawArrays(GL_TRIANGLES, 0, 3);
-
-  // Unbind VAO and program if needed
-  glBindVertexArray(0);
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -39,7 +39,7 @@ VkDebugUtilsMessengerEXT _debug_messenger; // Vulkan debug output handle
 VkPhysicalDevice _chosenGPU;               // GPU chosen as the default device
 VkDevice _device;                          // Vulkan device for commands
 VkSurfaceKHR _surface;                     // Vulkan window surface
-VkExtent2D _windowExtent {1028, 512};
+VkExtent2D _windowExtent {};
 
 bool _isInitialized {false};
 int _frameNumber {0};
@@ -102,7 +102,8 @@ void Device::Initialize()
 {
   SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
 
-  _window = SDL_CreateWindow("Vulkan Engine", _windowExtent.width,
+  _windowExtent = {m_windowSize.x, m_windowSize.y};
+  _window = SDL_CreateWindow(WindowTitle, _windowExtent.width,
                              _windowExtent.height, window_flags);
   init_vulkan();
   init_swapchain();

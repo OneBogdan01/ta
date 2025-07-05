@@ -30,9 +30,9 @@ void Device::SetGraphicsAPI(gfx::GRAPHICS_API api)
 Device::Device()
 {
   SetGraphicsAPI(io::LoadCurrentGraphicsAPI());
-
+  m_windowSize = {1280, 720};
   SDL_InitFlags flags {SDL_INIT_VIDEO};
-  SDL_SetAppMetadata("Hammered Engine", "0", "HammE");
+  SDL_SetAppMetadata(WindowTitle, "0", "HammE");
   if (SDL_Init(flags) == false)
   {
     log::Error("SDL could not be initialized");

@@ -1,8 +1,10 @@
 #pragma once
 
+#include <string_view>
 #include <glm/glm.hpp>
 namespace hm
 {
+constexpr const char* WindowTitle {"Hammered Engine"};
 
 namespace gfx
 {

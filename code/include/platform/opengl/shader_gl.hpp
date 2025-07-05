@@ -26,10 +26,10 @@ class Shader
   bool Load();
   void Reload();
   void Activate() const;
+  uint32_t m_programId {};
 
  private:
-  uint32_t m_programId {};
   std::string m_resourcePath {};
   ShaderPaths m_shaderPaths {};
 };
-} // namespace tale
+} // namespace hm
