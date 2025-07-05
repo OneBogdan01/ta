@@ -76,10 +76,21 @@ add_library(imgui_opengl STATIC
 target_link_libraries(imgui_opengl PUBLIC imgui_core OpenGL::GL)
 set_target_properties(imgui_opengl PROPERTIES FOLDER "engine/external")
 
-# Disable all warnings for targets using VMA
 if(MSVC)
-    target_compile_options(vma INTERFACE /W0)  # MSVC: disable all warnings
+    target_compile_options(glm INTERFACE /W0)
+    target_compile_options(stb_image INTERFACE /W0)
+    target_compile_options(vkbootstrap PRIVATE /W0)
+    target_compile_options(glad PRIVATE /W0)
+    target_compile_options(imgui_core PRIVATE /W0)
+    target_compile_options(imgui_vulkan PRIVATE /W0)
+    target_compile_options(imgui_opengl PRIVATE /W0)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|Intel")
-    target_compile_options(vma INTERFACE -w)   # GCC/Clang/Intel: disable all warnings
+    target_compile_options(glm INTERFACE -w)
+    target_compile_options(stb_image INTERFACE -w)
+    target_compile_options(vkbootstrap PRIVATE -w)
+    target_compile_options(glad PRIVATE -w)
+    target_compile_options(imgui_core PRIVATE -w)
+    target_compile_options(imgui_vulkan PRIVATE -w)
+    target_compile_options(imgui_opengl PRIVATE -w)
 endif()
 
