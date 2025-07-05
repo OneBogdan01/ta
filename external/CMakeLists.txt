@@ -24,6 +24,7 @@ target_sources(vkbootstrap PRIVATE
 target_include_directories(vkbootstrap PUBLIC vkbootstrap)
 target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 set_property(TARGET vkbootstrap PROPERTY CXX_STANDARD 20)
+set_target_properties(vkbootstrap PROPERTIES FOLDER "engine/external")
 
 # SDL3
 add_subdirectory(SDL)  
@@ -47,7 +48,6 @@ set_target_properties(glad PROPERTIES FOLDER "engine/external")
 
 
 # imgui
-
 set(IMGUI_CORE
     imgui/imgui.cpp
     imgui/imgui_demo.cpp
